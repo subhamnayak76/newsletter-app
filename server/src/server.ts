@@ -1,8 +1,14 @@
-import express, { Express, Response, Request } from "express";
+import express, { Express, Response, Request, NextFunction } from "express";
 import { createHealthRouter } from "./routes/health";
-
-const errorHandler = (error: Error, req: Request, res: Response) => {
-  console.log(error);
+import { createNewsletterRouter } from "./routes/newsletter/index"
+import cors from "cors";
+const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error("Error caught in errorHandler:");
+  console.error(error);
+  console.error("Request path:", req.path);
+  console.error("Request method:", req.method);
+  console.error("Request headers:", req.headers);
+  console.error("Request body:", req.body);
 
   res.status(500).json({
     status: false,
@@ -11,7 +17,7 @@ const errorHandler = (error: Error, req: Request, res: Response) => {
 };
 
 // the server singleton
-let server: Express | null = null;
+let server: Express;
 
 export const createServer = (): Express => {
   if (server) return server;
@@ -19,13 +25,17 @@ export const createServer = (): Express => {
   server = express();
 
   // middleware setup
+  server.use(cors());
   server.use(express.json());
   server.use(express.urlencoded({ extended: true }));
 
   server.use("/v1", createHealthRouter());
+  server.use("/v1", createNewsletterRouter());
 
   server.use((req, res, next) => {
-    next(new Error("Not found"));
+    console.log('Received request:', req.method, req.path);
+    console.log('Request body:', req.body);
+    next();
   });
 
   server.use(errorHandler);
