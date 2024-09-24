@@ -1,14 +1,13 @@
 import express, { Express, Response, Request, NextFunction } from "express";
 import { createHealthRouter } from "./routes/health";
 import { createNewsletterRouter } from "./routes/newsletter/index"
+import { PrismaClient } from "@prisma/client";
+interface CreateServerParams {
+  prisma: PrismaClient;
+}
 import cors from "cors";
 const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error("Error caught in errorHandler:");
-  console.error(error);
-  console.error("Request path:", req.path);
-  console.error("Request method:", req.method);
-  console.error("Request headers:", req.headers);
-  console.error("Request body:", req.body);
+  console.log('Error:', error);
 
   res.status(500).json({
     status: false,
@@ -19,7 +18,7 @@ const errorHandler = (error: Error, req: Request, res: Response, next: NextFunct
 // the server singleton
 let server: Express;
 
-export const createServer = (): Express => {
+export const createServer = ({prisma}:CreateServerParams): Express => {
   if (server) return server;
 
   server = express();
@@ -30,7 +29,7 @@ export const createServer = (): Express => {
   server.use(express.urlencoded({ extended: true }));
 
   server.use("/v1", createHealthRouter());
-  server.use("/v1", createNewsletterRouter());
+  server.use("/v1", createNewsletterRouter(prisma));
 
   server.use((req, res, next) => {
     console.log('Received request:', req.method, req.path);

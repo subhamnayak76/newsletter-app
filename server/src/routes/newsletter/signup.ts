@@ -1,41 +1,43 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, response } from 'express';
 import { isEmailValid } from '../../utlis/email';
-
+import { PrismaClient } from '@prisma/client';
+import { upsertSubscriber } from '../../service/newsletter/newsletter';
+import { ErrorCode } from '../../error/error';
 interface SignupPayload {
     email?: string;
 }
 
-export const SignupHandler = () => async (req: Request, res: Response, next: NextFunction) => {
+export const SignupHandler = ( prisma: PrismaClient) => async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log("Received signup request:", req.body);
         const { email = "" } = req.body as SignupPayload;
 
-        if (!email.trim()) {
-            console.log("Email is empty");
-            return res.status(400).json({
-                status: false,
-                message: "Email is required"
-            });
+        if (!email) {
+            throw new ErrorCode("ERR-001","Email");
         }
 
         if (!isEmailValid(email)) {
-            console.log("Invalid email:", email);
-            return res.status(400).json({
-                status: false,
-                message: "Invalid email, please try again."
-            });
+            throw new ErrorCode("ERR-002","Email");
         }
 
         console.log("Email is valid:", email);
         // Here you would typically save the email to your database
         // For now, we'll just simulate a successful registration
+        const newsletterSubscriber = await upsertSubscriber(prisma, email);
+        console.log("Subscriber created:", newsletterSubscriber);
 
-        return res.status(200).json({
-            status: true,
-            message: "Email has been successfully registered."
-        });
-    } catch (error) {
-        console.error("Error in SignupHandler:", error);
-        next(error); // Pass the error to the error handling middleware
+        //pub-sub
+    } catch (error:unknown) {
+        if(!(error instanceof ErrorCode)){
+            console.log("signupHandler :",error)
+            throw new Error(String(error));
+        }
+
+        
+
+        if(["ERR-001","ERR-002"].includes(error.code)){
+            return res.status(400).json(error.message);
+        }
+        return res.status(500).json(error.message);
     }
 };
