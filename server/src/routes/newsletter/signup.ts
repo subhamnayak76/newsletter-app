@@ -26,7 +26,7 @@ export const SignupHandler = (prisma: PrismaClient) => async (req: Request, res:
         console.log("Email is valid:", email);
         const newsletterSubscriber = await upsertSubscriber(prisma, email);
         console.log("signupHandler: Signup is successful");
-        return res.status(httpStatus.OK).json(newsletterSubscriber);
+        return res.status(httpStatus.CREATED).json(newsletterSubscriber);
     } catch (error: unknown) {
         if (!(error instanceof ErrorCode)) {
             console.log("signupHandler:", error);
