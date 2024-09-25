@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { createRandomToken } from "../../utlis/random";
 export const upsertSubscriber = async (prisma:PrismaClient, email:string) => {
     try {
-        const subscriber = await prisma.newsletterSubscriber.upsert({
+        const newsletterSubscriber = await prisma.newsletterSubscriber.upsert({
             create: {
                 email,
                 active: false,
@@ -19,7 +19,7 @@ export const upsertSubscriber = async (prisma:PrismaClient, email:string) => {
             }
         });
 
-        return subscriber;
+        return newsletterSubscriber;
     } catch (error) {
         console.error("Error in upsertSubscriber:", error);
         throw new Error();
