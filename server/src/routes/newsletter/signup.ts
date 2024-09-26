@@ -4,13 +4,14 @@ import httpStatus from 'http-status';
 import { isEmailValid } from '../../utlis/email';
 import { PrismaClient } from '@prisma/client';
 import { upsertSubscriber } from '../../service/newsletter/newsletter';
+import { PubSubService } from "../../service/pubsub/type"
 import { ErrorCode } from '../../error/error';
 
 interface SignupPayload {
     email?: string;
 }
 
-export const SignupHandler = (prisma: PrismaClient) => async (req: Request, res: Response, next: NextFunction) => {
+export const SignupHandler = (prisma: PrismaClient,pubSub:PubSubService) => async (req: Request, res: Response, next: NextFunction) => {
     try {
         console.log("Received signup request:", req.body);
         const { email = "" } = req.body as SignupPayload;
@@ -25,8 +26,13 @@ export const SignupHandler = (prisma: PrismaClient) => async (req: Request, res:
 
         console.log("Email is valid:", email);
         const newsletterSubscriber = await upsertSubscriber(prisma, email);
+
+        await pubSub.publish("newsletter-signup",{data: "hello world"});
         console.log("signupHandler: Signup is successful");
         return res.status(httpStatus.CREATED).json(newsletterSubscriber);
+
+
+
     } catch (error: unknown) {
         if (!(error instanceof ErrorCode)) {
             console.log("signupHandler:", error);

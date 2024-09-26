@@ -1,9 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import { createServer } from "./server";
+import { TestPubSub } from "./service/pubsub/test-pubsub";
+import { GooglePubSubService } from "./service/pubsub/gcp";
 
 const PORT = process.env.PORT || 8080;
 const prisma = new PrismaClient();
-const server = createServer({prisma}).listen(PORT, () => {
+const pubSub =  new GooglePubSubService(process.env.GCP_PROJECT_ID || "");
+const server = createServer({prisma,pubSub}).listen(PORT, () => {
   console.log(`🚀 Server ready at: http://localhost:${PORT}`);
 });
 

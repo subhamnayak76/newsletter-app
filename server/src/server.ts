@@ -4,8 +4,10 @@ import { createNewsletterRouter } from "./routes/newsletter/index"
 import { PrismaClient } from "@prisma/client";
 interface CreateServerParams {
   prisma: PrismaClient;
+  pubSub: PubSubService;
 }
 import cors from "cors";
+import { PubSubService } from "./service/pubsub/type";
 const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
   console.log('Error:', error);
 
@@ -18,7 +20,7 @@ const errorHandler = (error: Error, req: Request, res: Response, next: NextFunct
 // the server singleton
 let server: Express;
 
-export const createServer = ({prisma}:CreateServerParams): Express => {
+export const createServer = ({prisma,pubSub}:CreateServerParams): Express => {
   if (server) return server;
 
   server = express();
@@ -29,7 +31,7 @@ export const createServer = ({prisma}:CreateServerParams): Express => {
   server.use(express.urlencoded({ extended: true }));
 
   server.use("/v1", createHealthRouter());
-  server.use("/v1", createNewsletterRouter(prisma));
+  server.use("/v1", createNewsletterRouter(prisma,pubSub));
 
   server.use((req, res, next) => {
     console.log('Received request:', req.method, req.path);
